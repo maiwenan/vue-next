@@ -111,6 +111,7 @@ export type CreateAppFunction<HostElement> = (
 
 let uid = 0
 
+// 返回创建 vue 应用实例的工厂函数
 export function createAppAPI<HostElement>(
   render: RootRenderFunction,
   hydrate?: RootHydrateFunction
@@ -148,6 +149,7 @@ export function createAppAPI<HostElement>(
       },
 
       use(plugin: Plugin, ...options: any[]) {
+        // 先判断插件是否已经安装，如果已安装则跳过，否则进入安装插件
         if (installedPlugins.has(plugin)) {
           __DEV__ && warn(`Plugin has already been applied to target app.`)
         } else if (plugin && isFunction(plugin.install)) {
@@ -210,8 +212,10 @@ export function createAppAPI<HostElement>(
         return app
       },
 
+      // 渲染 vue 应用到根容器节点，核心点：1. 创建根组件的 vnode；2. 渲染 vnode 到容器节点
       mount(rootContainer: HostElement, isHydrate?: boolean): any {
         if (!isMounted) {
+          // 核心1，创建根组件的 vnode
           const vnode = createVNode(
             rootComponent as ConcreteComponent,
             rootProps
@@ -227,6 +231,7 @@ export function createAppAPI<HostElement>(
             }
           }
 
+          // 核心2，渲染 vnode 到容器节点
           if (isHydrate && hydrate) {
             hydrate(vnode as VNode<Node, Element>, rootContainer as any)
           } else {

@@ -1,3 +1,7 @@
+/**
+ * 采用二进制位做类型的标识符，好处在于：判定一个类型是否满足复合类型会简单一些，如:
+ * const isComponent = type => type & COMPONENT > 0
+ */
 export const enum ShapeFlags {
   ELEMENT = 1,
   FUNCTIONAL_COMPONENT = 1 << 1,

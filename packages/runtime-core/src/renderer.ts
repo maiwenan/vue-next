@@ -71,6 +71,7 @@ import { ComponentPublicInstance } from './componentPublicInstance'
 import { devtoolsComponentRemoved, devtoolsComponentUpdated } from './devtools'
 import { initFeatureFlags } from './featureFlags'
 
+// renderer 接口
 export interface Renderer<HostElement = RendererElement> {
   render: RootRenderFunction<HostElement>
   createApp: CreateAppFunction<HostElement>
@@ -85,6 +86,7 @@ export type RootRenderFunction<HostElement = RendererElement> = (
   container: HostElement
 ) => void
 
+// DOM API 操作的上层封装，平台特性
 export interface RendererOptions<
   HostNode = RendererNode,
   HostElement = RendererElement
@@ -416,6 +418,7 @@ function baseCreateRenderer(
   createHydrationFns: typeof createHydrationFunctions
 ): HydrationRenderer
 
+// 创建 renderer 的方法实现
 // implementation
 function baseCreateRenderer(
   options: RendererOptions,
@@ -443,18 +446,20 @@ function baseCreateRenderer(
     insertStaticContent: hostInsertStaticContent
   } = options
 
+  // 组件渲染与更新的核心函数
   // Note: functions inside this closure should use `const xxx = () => {}`
   // style in order to prevent being inlined by minifiers.
   const patch: PatchFn = (
-    n1,
-    n2,
-    container,
+    n1, // null 或者旧的 vnode
+    n2, // 新的 vnode
+    container, // 容器dom节点
     anchor = null,
     parentComponent = null,
     parentSuspense = null,
     isSVG = false,
     optimized = false
   ) => {
+    // 如果不是相同类型 vnode 节点，卸载旧的节点，重新渲染新节点
     // patching & not same type, unmount old tree
     if (n1 && !isSameVNodeType(n1, n2)) {
       anchor = getNextHostNode(n1)
@@ -462,11 +467,23 @@ function baseCreateRenderer(
       n1 = null
     }
 
+    // 新的节点不支持优化模式的 diff 算法
     if (n2.patchFlag === PatchFlags.BAIL) {
       optimized = false
       n2.dynamicChildren = null
     }
 
+    /**
+     * 根据节点的类型执行相应的 process 方法
+     * 1. Text 文本
+     * 2. Comment 注释
+     * 3. Static 静态html内容
+     * 4. Fragment vue提供的Fragment片段
+     * 5. ShapeFlags.ELEMENT html原生节点（div，span等）
+     * 6. ShapeFlags.COMPONENT vue组件
+     * 7. ShapeFlags.TELEPORT vue内置的Teleport实现
+     * 8. ShapeFlags.SUSPENSE 挂起节点（异步渲染）
+     */
     const { type, ref, shapeFlag } = n2
     switch (type) {
       case Text:
@@ -2216,6 +2233,7 @@ function baseCreateRenderer(
     }
   }
 
+  // 渲染 vnode 到 dom 节点的函数（vue 应用的渲染函数）
   const render: RootRenderFunction = (vnode, container) => {
     if (vnode == null) {
       if (container._vnode) {
